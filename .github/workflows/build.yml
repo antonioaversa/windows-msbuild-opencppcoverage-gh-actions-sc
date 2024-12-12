@@ -25,8 +25,8 @@ jobs:
           curl -L https://github.com/OpenCppCoverage/OpenCppCoverage/releases/download/release-0.9.9.0/OpenCppCoverageSetup-x64-0.9.9.0.exe -o OpenCppCoverageSetup.exe
           Start-Process -FilePath .\OpenCppCoverageSetup.exe -ArgumentList "/SUPRESSMSGBOXES /NORESTART /VERYSILENT" -NoNewWindow -Wait
 
-      - name: Install sonar-scanner and build-wrapper
-        uses: sonarsource/sonarcloud-github-c-cpp@antonio/SCCPPGHA-10-rebranding-forwarding
+      - name: Install build-wrapper
+        uses: sonarsource/sonarqube-scan-action/install-build-wrapper@antonio/SCCPPGHA-10-rebranding-forwarding
 
       - name: Run build-wrapper
         run: |
@@ -35,14 +35,15 @@ jobs:
         run: |
           msbuild test1\test1.vcxproj
           msbuild test2\test2.vcxproj
-      - name: Run tests with coverage
+      - name: Install and run tests with coverage
         run: |
           &"C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe" --cover_children --sources=$(pwd) --modules test*\*\test*.dll "--export_type=cobertura:cobertura.xml" -- vstest.console.exe test1\*\test1.dll test2\*\test2.dll
       - name: Run sonar-scanner
+        uses: sonarsource/sonarqube-scan-action@antonio/SCCPPGHA-10-rebranding-forwarding
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }} # Put the name of your token here
-        run: >
-          sonar-scanner 
-          --define sonar.cfamily.compile-commands="${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
-          --define sonar.cfamily.cobertura.reportPaths="cobertura.xml"
+        with:
+          args: > 
+            --define sonar.cfamily.compile-commands="${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
+            --define sonar.cfamily.cobertura.reportPaths="cobertura.xml"
